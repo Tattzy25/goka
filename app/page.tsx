@@ -333,7 +333,7 @@ function MultiImageUploadInput({
 }
 
 export default function Home() {
-  const [numOutputs, setNumOutputs] = useState(1)
+const [numOutputs, setNumOutputs] = useState(4)
   const [aspectRatio, setAspectRatio] = useState("1:1")
   const [width, setWidth] = useState(1024)
   const [height, setHeight] = useState(1024)
@@ -572,73 +572,21 @@ export default function Home() {
         />
       </div>
       <div className="container mx-auto py-10 px-[10px] space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Card 1: Prompt & Model Settings */}
+<div className="grid grid-cols-1 gap-6">
         <Card className="shadow-[0px_0px_7px_3px_rgba(28,156,240,0.8)] h-full">
-          <CardHeader>
-            <CardTitle>Prompt & Model</CardTitle>
-          </CardHeader>
           <CardContent className="space-y-4 flex-1">
-            <div className="space-y-2 hidden">
-              <LabelWithTooltip 
-                id="replicate_model" 
-                label="Replicate Model" 
-                tooltip="Select the specific Replicate model to use for generation." 
-              />
-              <Select 
-                value={replicateModelId} 
-                onValueChange={(val: string) => {
-                  setReplicateModelId(val)
-                  if (val === "custom" && !customModelId) {
-                    setCustomModelId("black-forest-labs/flux-dev")
-                  }
-                }}
-              >
-                <SelectTrigger id="replicate_model">
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {AVAILABLE_MODELS.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="custom">Other (Custom ID)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {replicateModelId === "custom" && (
-              <div className="space-y-2">
-                <LabelWithTooltip 
-                  id="custom_model_id" 
-                  label="Custom Model ID" 
-                  tooltip="Enter the full Replicate model ID (e.g., owner/model:version)" 
-                />
-                <Input 
-                  id="custom_model_id" 
-                  placeholder="owner/model:version" 
-                  value={customModelId}
-                  onChange={(e) => setCustomModelId(e.target.value)}
-                />
-              </div>
-            )}
-
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <LabelWithTooltip 
-                  id="prompt" 
-                  label="Prompt" 
-                  tooltip="Prompt for generated image. If you include the `trigger_word` used in the training process you are more likely to activate the trained object, style, or concept in the resulting image." 
+                <LabelWithTooltip
+                  id="prompt"
+                  label="Prompt"
+                  tooltip="Prompt for generated image. If you include the `trigger_word` used in the training process you are more likely to activate the trained object, style, or concept in the resulting image."
                 />
-                <span className="text-sm text-muted-foreground">
-                  Trigger word: <span className="font-mono font-bold text-primary">FAMOSOFLUXO</span>
-                </span>
               </div>
-              <Textarea 
-                id="prompt" 
-                placeholder="Enter your prompt here..." 
-                className="h-24" 
+              <Textarea
+                id="prompt"
+                placeholder="Enter your prompt here..."
+                className="h-24"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
               />
@@ -647,86 +595,16 @@ export default function Home() {
             <Separator className="my-2" />
 
             <div className="space-y-4">
-              <MultiImageUploadInput 
-                id="image_url"  
-                label="Image (Img2Img)" 
-                tooltip="Input image for image to image or inpainting mode. If provided, aspect_ratio, width, and height inputs are ignored." 
+              <MultiImageUploadInput
+                id="image_url"
+                label="Image (Img2Img)"
+                tooltip="Input image for image to image or inpainting mode. If provided, aspect_ratio, width, and height inputs are ignored."
                 values={images}
                 onChange={(vals, names) => {
                   setImages(vals)
                   setImageFileNames(names ?? [])
                 }}
               />
-
-              <div className="hidden">
-                <ImageUploadInput 
-                  id="mask_url" 
-                  label="Mask (Inpainting)" 
-                  tooltip="Image mask for image inpainting mode. If provided, aspect_ratio, width, and height inputs are ignored." 
-                  value={mask}
-                  onChange={(val, name) => {
-                    setMask(val)
-                    if (name) setMaskFileName(name)
-                  }}
-                />
-
-                <div className="space-y-2">
-                  <LabelWithTooltip 
-                    label={`Prompt Strength (${promptStrength})`}
-                    tooltip="Prompt strength when using img2img. 1.0 corresponds to full destruction of information in image" 
-                  />
-                  <Slider 
-                    value={[promptStrength]} 
-                    onValueChange={(vals: number[]) => setPromptStrength(vals[0])} 
-                    max={1} 
-                    step={0.05} 
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 hidden">
-              <div className="space-y-2">
-                <LabelWithTooltip 
-                  id="model" 
-                  label="Flux Mode" 
-                  tooltip="Which version of Flux to run inference with. 'Dev' is higher quality (slower), 'Schnell' is faster (lower quality)." 
-                />
-                <Select 
-                  value={model} 
-                  onValueChange={(val: string) => {
-                    setModel(val)
-                    if (val === "schnell") {
-                      setNumInferenceSteps(4)
-                    } else {
-                      setNumInferenceSteps(28)
-                    }
-                  }}
-                >
-                  <SelectTrigger id="model">
-                    <SelectValue placeholder="Select model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dev">Dev</SelectItem>
-                    <SelectItem value="schnell">Schnell</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <LabelWithTooltip 
-                  id="num_outputs" 
-                  label="Num Outputs" 
-                  tooltip="Number of outputs to generate" 
-                />
-                <Input 
-                  id="num_outputs" 
-                  type="number" 
-                  min={1} 
-                  max={4} 
-                  value={numOutputs}
-                  onChange={(e) => setNumOutputs(parseInt(e.target.value) || 1)}
-                />
-              </div>
             </div>
           </CardContent>
         </Card>
