@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Info, ImageIcon, Loader2, Download, Upload, Link as LinkIcon, X, Sparkles, Share2 } from "lucide-react"
+import { Info, ImageIcon, Loader2, Download, Upload, Link as LinkIcon, X, Sparkles, Share2, Edit } from "lucide-react"
 import Lightbox from "yet-another-react-lightbox"
 import "yet-another-react-lightbox/styles.css"
 import { toast } from "sonner"
@@ -262,10 +262,10 @@ function MultiImageUploadInput({
       <LabelWithTooltip id={id} label={label} tooltip={tooltip} />
 
       {values.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {values.map((src, idx) => (
-            <div key={idx} className="relative overflow-hidden rounded-md border bg-muted/30">
-              <img src={src} alt={`Upload preview ${idx + 1}`} className="h-24 w-full object-cover" />
+            <div key={idx} className="relative overflow-hidden rounded-lg border bg-muted/30">
+              <img src={src} alt={`Upload preview ${idx + 1}`} className="h-24 w-full object-cover rounded-lg" />
               <Button
                 type="button"
                 variant="secondary"
@@ -564,14 +564,10 @@ const [numOutputs, setNumOutputs] = useState(4)
 
   return (
     <div className="flex flex-col w-full">
-      <div className="w-full flex justify-center items-center py-4">
-        <img 
-          src="/header svg gokani.svg" 
-          alt="GoKAnI Header" 
-          className="h-24 w-auto object-contain"
-        />
-      </div>
-      <div className="container mx-auto py-10 px-[10px] space-y-8">
+<div className="container mx-auto py-10 px-[10px] space-y-8">
+<div className="text-2xl md:text-3xl font-bold text-center mb-8">
+Describe the tattoo style and colors you want (e.g., realistic, traditional, black & grey, full color). Mention if it’s a cover-up or an extension
+</div>
 <div className="grid grid-cols-1 gap-6">
         <Card className="shadow-[0px_0px_7px_3px_rgba(28,156,240,0.8)] h-full">
           <CardContent className="space-y-4 flex-1">
@@ -918,24 +914,36 @@ const [numOutputs, setNumOutputs] = useState(4)
                       className="w-full h-full object-cover rounded-lg"
                     />
                   </div>
-                  <div className="flex gap-2 w-full max-w-md">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+<div className="flex gap-2 w-full max-w-md">
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="flex-1"
                       onClick={() => handleDownload(src, i)}
                     >
                       <Download className="mr-2 h-4 w-4" />
                       Download
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="flex-1"
                       onClick={() => handleShare(src, i)}
                     >
                       <Share2 className="mr-2 h-4 w-4" />
                       Share
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setImages([...images, src])
+                        setImageFileNames([...imageFileNames, `generated-image-${i + 1}`])
+                      }}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
                     </Button>
                   </div>
                 </div>
