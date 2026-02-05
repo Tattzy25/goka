@@ -1,6 +1,7 @@
 "use server"
 
 import Replicate from "replicate"
+import { constructPayload } from "@/lib/payload"
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
@@ -8,42 +9,38 @@ const replicate = new Replicate({
 
 export async function generateImage(formData: FormData) {
   const prompt = formData.get("prompt") as string
-  const image = formData.get("image") as string
-  const mask = formData.get("mask") as string
+  const image = formData.get("image") as string | null
+  const mask = formData.get("mask") as string | null
 
-  // Hardcoded internal settings based on provided payload and JSON schema
-  const replicateModelId = "4e8f6c1dc77db77dabaf98318cde3679375a399b434ae2db0e698804ac84919c"
+  // Use the full model identifier
+  const modelIdentifier = "tattzy25/tattty_4_all:4e8f6c1dc77db77dabaf98318cde3679375a399b434ae2db0e698804ac84919c"
   
-  const input: any = {
-    prompt: `a beautiful TA-TTT-OO-ME tattoo image of ${prompt}`,
-    model: "dev",
-    aspect_ratio: "1:1",
-    output_format: "webp",
-    num_outputs: 1,
-    megapixels: "1",
-    output_quality: 80,
-    guidance_scale: 3,
-    num_inference_steps: 28,
-    go_fast: false,
-    disable_safety_checker: true,
-    prompt_strength: 0.8,
-    lora_scale: 1,
-    extra_lora_scale: 1,
-  }
-
-  if (image) input.image = image
-  if (mask) input.mask = mask
+  const input = constructPayload({ 
+    prompt, 
+    image: image || undefined, 
+    mask: mask || undefined 
+  })
 
   try {
-    const output = await replicate.run(
-      replicateModelId as any,
-      { input }
-    )
+    // Using replicate.run as suggested in the issue description for better compatibility
+    const output = await replicate.run(modelIdentifier, { input }) as any
     
-    // Convert FileOutput objects to URL strings
+    if (!output) throw new Error("No output received from Replicate")
+
+    const processOutput = (item: any): string => {
+      if (typeof item === 'string') return item
+      if (item && typeof item === 'object' && typeof item.url === 'function') {
+        return item.url().toString()
+      }
+      if (item && typeof item === 'object' && item.url) {
+        return String(item.url)
+      }
+      return String(item)
+    }
+
     const serializedOutput = Array.isArray(output) 
-      ? output.map((item: any) => item.url().toString())
-      : (output as any).url().toString()
+      ? output.map(processOutput)
+      : [processOutput(output)]
 
     return { success: true, output: serializedOutput }
   } catch (error) {

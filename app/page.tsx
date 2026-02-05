@@ -4,20 +4,15 @@ import { useState, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Slider } from "@/components/ui/slider"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Info, ImageIcon, Loader2, Download, Upload, Link as LinkIcon, X, Sparkles, Share2, Edit } from "lucide-react"
+import { Info, Loader2, Download, Upload, X, Sparkles, Share2, Edit } from "lucide-react"
 import Lightbox from "yet-another-react-lightbox"
 import "yet-another-react-lightbox/styles.css"
 import { toast } from "sonner"
 import { generateImage } from "./actions"
-import { AVAILABLE_MODELS } from "@/lib/models"
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
 import {
   Dialog,
   DialogContent,
@@ -204,7 +199,6 @@ function MultiImageUploadInput({
 }
 
 export default function Home() {
-  const [isGenerated, setIsGenerated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
@@ -214,12 +208,10 @@ export default function Home() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [shareFile, setShareFile] = useState<File | null>(null)
   const [shareUrl, setShareUrl] = useState("")
-  const [isPreparingShare, setIsPreparingShare] = useState(false)
 
   // Form State
   const [prompt, setPrompt] = useState("")
   const [images, setImages] = useState<string[]>([])
-  const [imageFileNames, setImageFileNames] = useState<string[]>([])
 
   const handleGenerate = async () => {
     if (isLoading) return // Prevent double clicks
@@ -230,7 +222,6 @@ export default function Home() {
     }
 
     setIsLoading(true)
-    setIsGenerated(false)
     setGeneratedImages([])
 
     const formData = new FormData()
@@ -241,9 +232,8 @@ export default function Home() {
 
     const result = await generateImage(formData)
 
-    if (result.success) {
-      setGeneratedImages(Array.isArray(result.output) ? result.output : [result.output])
-      setIsGenerated(true)
+    if (result.success && result.output) {
+      setGeneratedImages(Array.isArray(result.output) ? (result.output as string[]) : [result.output as string])
     } else {
       console.error(result.error)
       toast.error(result.error || "Failed to generate image. Please try again.")
@@ -277,32 +267,28 @@ export default function Home() {
     const filename = `generated-image-${index + 1}.webp`
     setShareUrl(url)
     
-    // Check if we can share files
-    if (navigator.canShare && navigator.canShare({ files: [new File([], 'test.png')] })) {
-      setIsPreparingShare(true)
-      toast.info("Preparing image for sharing...")
-      
-      try {
-        const response = await fetch(`/api/download?url=${encodeURIComponent(url)}&filename=${filename}`)
-        if (response.ok) {
-          const blob = await response.blob()
-          const file = new File([blob], filename, { type: blob.type })
-          setShareFile(file)
-          setShareDialogOpen(true)
-          setIsPreparingShare(false)
-          return
+      if (navigator.canShare && navigator.canShare({ files: [new File([], 'test.png')] })) {
+        toast.info("Preparing image for sharing...")
+        
+        try {
+          const response = await fetch(`/api/download?url=${encodeURIComponent(url)}&filename=${filename}`)
+          if (response.ok) {
+            const blob = await response.blob()
+            const file = new File([blob], filename, { type: blob.type })
+            setShareFile(file)
+            setShareDialogOpen(true)
+            return
+          }
+        } catch (error) {
+          console.warn("File preparation failed", error)
         }
-      } catch (error) {
-        console.warn("File preparation failed", error)
       }
-      setIsPreparingShare(false)
-    }
 
     // Fallback to Link Sharing immediately if file sharing isn't supported or failed
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'GoKAnI AI Generation',
+          title: 'TaTTTy AI Generation',
           text: 'Check out this image I generated with GoKAnI AI!',
           url: url
         })
@@ -317,7 +303,7 @@ export default function Home() {
     try {
       await navigator.clipboard.writeText(url)
       toast.info("Sharing failed, link copied to clipboard instead!")
-    } catch (clipboardError) {
+    } catch {
       toast.error("Failed to share. Try downloading instead.")
     }
   }
@@ -333,11 +319,11 @@ export default function Home() {
       })
       toast.success("Shared image successfully")
       setShareDialogOpen(false)
-    } catch (error: any) {
+    } catch (error) {
       console.warn("Share execution failed", error)
       
       // If user cancelled, just close dialog
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         setShareDialogOpen(false)
         return
       }
@@ -352,22 +338,13 @@ export default function Home() {
           })
           setShareDialogOpen(false)
           return
-        } catch (e) {
+        } catch {
            // ignore
         }
       }
       
       toast.error("Sharing failed. Try downloading instead.")
       setShareDialogOpen(false)
-    }
-  }
-
-  const handleDownloadAll = async () => {
-    toast.info("Starting download of all images...")
-    for (let i = 0; i < generatedImages.length; i++) {
-      await handleDownload(generatedImages[i], i)
-      // Small delay to prevent browser blocking
-      await new Promise(resolve => setTimeout(resolve, 1000))
     }
   }
 
@@ -379,11 +356,20 @@ export default function Home() {
 
   return (
     <div className="flex flex-col w-full">
-<div className="container mx-auto py-10 px-[10px] space-y-8">
-<div className="text-2xl md:text-3xl font-bold text-center mb-8">
-Describe the tattoo style and colors you want (e.g., realistic, traditional, black & grey, full color). Mention if it’s a cover-up or an extension
-</div>
-<div className="grid grid-cols-1 gap-6">
+      <div className="container mx-auto py-10 px-4 space-y-12 max-w-6xl">
+        
+        <div className="text-center space-y-4 mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Design Your Next Tattoo
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Please be descriptive and thorough with your prompt. Mention the <span className="text-foreground font-medium">style</span> and <span className="text-foreground font-medium">colors</span> you want—for example: 
+            <span className="italic text-foreground"> &quot;traditional style, bold lines, black and grey&quot;</span> or 
+            <span className="italic text-foreground"> &quot;realistic portrait, vibrant colors, fine detail&quot;</span>.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
         <Card className="h-full border-2">
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
@@ -411,9 +397,8 @@ Describe the tattoo style and colors you want (e.g., realistic, traditional, bla
                 label="Image (Optional)"
                 tooltip="Input image for image to image mode."
                 values={images}
-                onChange={(vals, names) => {
+                onChange={(vals) => {
                   setImages(vals)
-                  setImageFileNames(names ?? [])
                 }}
               />
             </div>
@@ -425,7 +410,7 @@ Describe the tattoo style and colors you want (e.g., realistic, traditional, bla
         <Button 
           size="lg" 
           className={cn(
-            "w-full max-w-md text-2xl py-6 h-auto transition-transform active:scale-95",
+            "w-full max-w-md text-3xl py-8 h-auto transition-transform active:scale-95",
             isLoading && "opacity-50 cursor-not-allowed active:scale-100"
           )}
           onClick={handleGenerate}
@@ -433,14 +418,14 @@ Describe the tattoo style and colors you want (e.g., realistic, traditional, bla
         >
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+              <Loader2 className="mr-3 h-8 w-8 animate-spin" />
               CREATING...
             </>
           ) : (
             <>
-              <Sparkles className="mr-2 h-6 w-6" />
+              <Sparkles className="mr-3 h-8 w-8" />
               CREATE
-              <Sparkles className="ml-2 h-6 w-6" />
+              <Sparkles className="ml-3 h-8 w-8" />
             </>
           )}
         </Button>
@@ -455,11 +440,11 @@ Describe the tattoo style and colors you want (e.g., realistic, traditional, bla
             <p className="text-muted-foreground">Creating your masterpiece...</p>
           </div>
         ) : (
-          <div className="flex flex-wrap justify-center items-center gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
             {generatedImages.map((src, i) => (
-              <div key={i} className="flex flex-col gap-2">
+              <div key={i} className="flex flex-col gap-3 group">
                 <div 
-                  className="relative rounded-lg flex items-center justify-center w-full max-w-md cursor-pointer transition-colors aspect-square"
+                  className="relative rounded-xl overflow-hidden flex items-center justify-center w-full border border-border/50 hover:border-primary/50 transition-all duration-300 cursor-pointer aspect-square bg-muted/20"
                   onClick={() => {
                     setLightboxIndex(i)
                     setLightboxOpen(true)
@@ -468,35 +453,41 @@ Describe the tattoo style and colors you want (e.g., realistic, traditional, bla
                   <img 
                     src={src} 
                     alt={`Generated image ${i + 1}`} 
-                    className="w-full h-full object-cover rounded-lg border-2"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
                 </div>
-                <div className="flex gap-2 w-full max-w-md">
+                <div className="flex gap-2 w-full">
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 h-9 rounded-lg"
                     onClick={() => handleDownload(src, i)}
                   >
                     <Download className="mr-2 h-4 w-4" />
-                    Download
+                    Save
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 h-9 rounded-lg"
                     onClick={() => handleShare(src, i)}
                   >
                     <Share2 className="mr-2 h-4 w-4" />
                     Share
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 h-9 rounded-lg"
                     onClick={() => {
-                      setImages([src])
-                      setImageFileNames([`generated-image-${i + 1}.webp`])
+                      if (images.length < 4) {
+                        setImages([...images, src])
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                        toast.success("Added to workspace for editing")
+                      } else {
+                        toast.error("Workspace is full (max 4 images)")
+                      }
                     }}
                   >
                     <Edit className="mr-2 h-4 w-4" />

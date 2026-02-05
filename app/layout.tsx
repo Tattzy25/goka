@@ -8,6 +8,7 @@ const openSans = Open_Sans({
   subsets: ["latin"],
 });
 
+
 export const metadata: Metadata = {
   title: "GoKAnI AI - Image Generator",
   description: "Generate amazing images with GoKAnI AI (Flux). A powerful AI image generation tool powered by Replicate.",
