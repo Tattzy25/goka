@@ -28,7 +28,7 @@ export function InkMeUpButton({
         data-loading={isLoading ? "true" : undefined}
         aria-label={isLoading ? "Creating" : "Ink me up"}
       >
-        <span className={styles.wrap}>
+        <div className={styles.wrap}>
           <p className={styles.text}>
             <span>
               {isLoading ? (
@@ -59,7 +59,7 @@ export function InkMeUpButton({
               )}
             </span>
           </p>
-        </span>
+        </div>
       </button>
     </div>
   )

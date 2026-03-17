@@ -8,6 +8,9 @@
   --white: #ffe7ff;
   --bg: #080808;
   --radius: 100px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   outline: none;
   cursor: pointer;
   border: 0;
@@ -40,6 +43,7 @@
 }
 
 .wrap {
+  display: block;
   font-size: 14px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.7);
@@ -67,6 +71,7 @@
   justify-content: center;
   gap: 10px;
   margin: 0;
+  white-space: nowrap;
   transition: all 0.2s ease;
   transform: translateY(2%);
   mask-image: linear-gradient(to bottom, white 40%, transparent);

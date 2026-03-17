@@ -39,7 +39,7 @@
   opacity: 1;
 }
 
-.button .wrap {
+.wrap {
   font-size: 14px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.7);
@@ -49,19 +49,19 @@
   overflow: hidden;
 }
 
-.button .wrap p span:nth-child(2) {
+.text span:nth-child(2) {
   display: none;
 }
 
-.button:hover:not(:disabled) .wrap p span:nth-child(1) {
+.button:hover:not(:disabled) .text span:nth-child(1) {
   display: none;
 }
 
-.button:hover:not(:disabled) .wrap p span:nth-child(2) {
+.button:hover:not(:disabled) .text span:nth-child(2) {
   display: inline-block;
 }
 
-.button .wrap p {
+.text {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,14 +72,14 @@
   mask-image: linear-gradient(to bottom, white 40%, transparent);
 }
 
-.button .wrap::before,
-.button .wrap::after {
+.wrap::before,
+.wrap::after {
   content: "";
   position: absolute;
   transition: all 0.3s ease;
 }
 
-.button .wrap::before {
+.wrap::before {
   left: -15%;
   right: -15%;
   bottom: 25%;
@@ -88,7 +88,7 @@
   background-color: rgba(255, 255, 255, 0.12);
 }
 
-.button .wrap::after {
+.wrap::after {
   left: 6%;
   right: 6%;
   top: 12%;
@@ -121,7 +121,7 @@
   transform: translateY(5%);
 }
 
-.button:hover:not(:disabled) .wrap p {
+.button:hover:not(:disabled) .text {
   transform: translateY(-4%);
 }
 

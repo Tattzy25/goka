@@ -1,48 +1,43 @@
 "use client"
 
-import { Loader2 } from "lucide-react"
-import styles from "./InkMeUpButton.module.css"
+import * as React from "react"
 
-interface InkMeUpButtonProps {
-  isLoading?: boolean
-  onClick: () => void
+import styles from "./create-button.module.css"
+
+type CreateButtonProps = {
+  onClick?: React.MouseEventHandler<HTMLButtonElement>
   disabled?: boolean
+  loading?: boolean
+  type?: "button" | "submit" | "reset"
+  className?: string
+  defaultContent: React.ReactNode
+  hoverContent: React.ReactNode
 }
 
-export function InkMeUpButton({
-  isLoading = false,
+export function CreateButton({
   onClick,
-  disabled = false,
-}: InkMeUpButtonProps) {
+  disabled,
+  loading,
+  type = "button",
+  className,
+  defaultContent,
+  hoverContent,
+}: CreateButtonProps) {
   return (
     <div className={styles.buttonWrap}>
       <button
-        type="button"
-        className={styles.button}
+        type={type}
+        className={[styles.button, className].filter(Boolean).join(" ")}
         onClick={onClick}
-        disabled={disabled || isLoading}
-        data-loading={isLoading}
-        aria-label={isLoading ? "Creating" : "Ink me up"}
+        disabled={disabled}
+        data-loading={loading ? "true" : undefined}
       >
-        <div className={styles.wrap}>
-          <p>
-            {isLoading ? (
-              <>
-                <Loader2
-                  className="h-3.5 w-3.5 animate-spin"
-                  aria-hidden="true"
-                />
-                CREATING…
-              </>
-            ) : (
-              <>
-                <span aria-hidden="true">✧</span>
-                <span aria-hidden="true">✦</span>
-                INK ME UP
-              </>
-            )}
+        <span className={styles.wrap}>
+          <p className={styles.text}>
+            <span>{defaultContent}</span>
+            <span>{hoverContent}</span>
           </p>
-        </div>
+        </span>
       </button>
     </div>
   )

@@ -1,19 +1,17 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import Image from "next/image"
-import { cn } from "@/lib/utils"
-import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Info, Loader2, Download, Upload, X, Share2, Edit } from "lucide-react"
+import { Info, Loader2, Download, Share2, Edit } from "lucide-react"
 import Lightbox from "yet-another-react-lightbox"
 import "yet-another-react-lightbox/styles.css"
 import { toast } from "sonner"
 import { generateImage } from "./actions"
 import { InkMeUpButton } from "@/components/ink-me-up-button/InkMeUpButton"
+import { PromptInputBox } from "@/components/ui/ai-prompt-box"
 import {
   Dialog,
   DialogContent,
@@ -35,175 +33,6 @@ function LabelWithTooltip({ id, label, tooltip }: { id?: string, label: string, 
           <p>{tooltip}</p>
         </PopoverContent>
       </Popover>
-    </div>
-  )
-}
-
-function MultiImageUploadInput({
-  id,
-  values,
-  onChange,
-  label,
-  tooltip,
-  maxFiles = 4,
-}: {
-  id: string
-  values: string[]
-  onChange: (vals: string[], fileNames?: string[]) => void
-  label: string
-  tooltip: string
-  maxFiles?: number
-}) {
-  const [isDragging, setIsDragging] = useState(false)
-  const [localFileNames, setLocalFileNames] = useState<string[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const addFiles = (files: FileList | File[]) => {
-    const fileArray = Array.from(files)
-      .filter((f) => f.type.startsWith("image/"))
-      .slice(0, Math.max(0, maxFiles - values.length))
-
-    if (fileArray.length === 0) return
-
-    const readers = fileArray.map(
-      (file) =>
-        new Promise<{ dataUrl: string; name: string }>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve({ dataUrl: reader.result as string, name: file.name })
-          reader.onerror = () => reject(new Error("Failed to read file"))
-          reader.readAsDataURL(file)
-        })
-    )
-
-    Promise.all(readers)
-      .then((results) => {
-        const nextValues = [...values, ...results.map((r) => r.dataUrl)].slice(0, maxFiles)
-        const nextNames = [...localFileNames, ...results.map((r) => r.name)].slice(0, maxFiles)
-        setLocalFileNames(nextNames)
-        onChange(nextValues, nextNames)
-      })
-      .catch(() => {
-        toast.error("Failed to read file. Please try again.")
-      })
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const files = e.dataTransfer.files
-    if (files?.length) {
-      addFiles(files)
-      const rejected = Array.from(files).some((f) => !f.type.startsWith("image/"))
-      if (rejected) toast.error("Please upload valid image files (JPG, PNG, GIF)")
-    }
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files?.length) addFiles(files)
-    // allow re-selecting the same file
-    if (fileInputRef.current) fileInputRef.current.value = ""
-  }
-
-  const handleRemoveAt = (idx: number) => {
-    const nextValues = values.filter((_, i) => i !== idx)
-    const nextNames = localFileNames.filter((_, i) => i !== idx)
-    setLocalFileNames(nextNames)
-    onChange(nextValues, nextNames)
-  }
-
-  const canAddMore = values.length < maxFiles
-
-  return (
-    <div className="space-y-2">
-      <LabelWithTooltip id={id} label={label} tooltip={tooltip} />
-
-      {values.length > 0 && (
-<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {values.map((src, idx) => (
-            <div key={idx} className="relative overflow-hidden rounded-lg border bg-muted/30">
-              <div className="relative h-24 w-full">
-                <Image
-                  src={src}
-                  alt={`Upload preview ${idx + 1}`}
-                  fill
-                  sizes="(max-width: 640px) 50vw, 25vw"
-                  className="object-cover rounded-lg"
-                  unoptimized
-                />
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="absolute right-1 top-1 h-7 px-2"
-                onClick={() => handleRemoveAt(idx)}
-                aria-label={`Remove uploaded image ${idx + 1}`}
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </Button>
-              <div className="px-2 py-1">
-                <div className="truncate text-xs text-muted-foreground">
-                  {localFileNames[idx] || `Image ${idx + 1}`}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div
-        className={cn(
-          "relative flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 px-6 py-4 text-center transition-colors hover:bg-muted/50",
-          isDragging && "border-primary bg-muted",
-          !canAddMore && "cursor-not-allowed opacity-60 hover:bg-transparent"
-        )}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => {
-          if (!canAddMore) return
-          fileInputRef.current?.click()
-        }}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (!canAddMore) return
-          if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click()
-        }}
-        aria-disabled={!canAddMore}
-      >
-        <div className="flex flex-col items-center gap-2">
-          <div className="rounded-full bg-background p-3 shadow-sm">
-            <Upload className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
-          </div>
-          <div className="text-sm font-medium text-muted-foreground">
-            <span className="font-semibold text-foreground">Click to upload</span> or drag and drop
-          </div>
-          <div className="text-xs text-muted-foreground">SVG, PNG, JPG or GIF • up to {maxFiles}</div>
-          {!canAddMore && <div className="text-xs text-muted-foreground">Max {maxFiles} images selected</div>}
-        </div>
-      </div>
-
-      <input
-        id={id}
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        accept="image/*"
-        multiple
-        onChange={handleFileChange}
-      />
     </div>
   )
 }
@@ -249,6 +78,31 @@ export default function Home() {
       toast.error(result.error || "Failed to generate image. Please try again.")
     }
     setIsLoading(false)
+  }
+
+  const handlePromptBoxFilesChange = async (files: File[]) => {
+    const file = files?.[0]
+    if (!file) {
+      setImages([])
+      return
+    }
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file (JPG, PNG, GIF)")
+      return
+    }
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.onerror = () => reject(new Error("Failed to read file"))
+        reader.readAsDataURL(file)
+      })
+      setImages([dataUrl])
+    } catch {
+      toast.error("Failed to read file. Please try again.")
+    }
   }
 
   const handleDownload = async (url: string, index: number) => {
@@ -366,20 +220,8 @@ export default function Home() {
 
   return (
     <div className="flex flex-col w-full">
-      <div className="container mx-auto py-10 px-4 space-y-12 max-w-6xl">
-        
-        <div className="text-center space-y-4 mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Design Your Next Tattoo
-          </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Please be descriptive and thorough with your prompt. Mention the <span className="text-foreground font-medium">style</span> and <span className="text-foreground font-medium">colors</span> you want—for example: 
-            <span className="italic text-foreground"> &quot;traditional style, bold lines, black and grey&quot;</span> or 
-            <span className="italic text-foreground"> &quot;realistic portrait, vibrant colors, fine detail&quot;</span>.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6">
+      <div className="container mx-auto pt-2 pb-3 px-4 space-y-6 max-w-6xl">
+        <div className="grid grid-cols-1 gap-4">
           <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -389,43 +231,44 @@ export default function Home() {
                   tooltip="Prompt for generated image."
                 />
               </div>
-              <Textarea
-                id="prompt"
+              <PromptInputBox
                 placeholder="Enter your prompt here..."
-                className="h-24"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                isLoading={isLoading}
+                onValueChange={setPrompt}
+                onFilesChange={handlePromptBoxFilesChange}
               />
             </div>
 
-            <Separator className="my-2" />
-
-            <div className="space-y-4">
-              <MultiImageUploadInput
-                id="image_url"
-                label="Image (Optional)"
-                tooltip="Input image for image to image mode."
-                values={images}
-                onChange={(vals) => {
-                  setImages(vals)
-                }}
-              />
-            </div>
+            {/* PromptInputBox includes image upload; keep state in sync via onSend */}
           </div>
       </div>
 
       <InkMeUpButton onClick={handleGenerate} isLoading={isLoading} />
-
-      <Separator />
       
-      <div className="flex flex-col items-center pb-12">
+      <div className="flex flex-col items-center pb-4">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center space-y-4 py-12">
-            <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground">Creating your masterpiece...</p>
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full"
+            aria-live="polite"
+          >
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-3">
+                <div className="relative rounded-xl overflow-hidden flex items-center justify-center w-full border border-border/50 aspect-square bg-muted/20">
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" aria-hidden="true" />
+                    <div className="text-sm text-muted-foreground">Generating…</div>
+                  </div>
+                </div>
+                <div className="flex gap-2 w-full opacity-60">
+                  <div className="flex-1 h-9 rounded-lg bg-muted/30 border border-border/50" />
+                  <div className="flex-1 h-9 rounded-lg bg-muted/30 border border-border/50" />
+                  <div className="flex-1 h-9 rounded-lg bg-muted/30 border border-border/50" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
             {generatedImages.map((src, i) => (
               <div key={i} className="flex flex-col gap-3 group">
                 <div 

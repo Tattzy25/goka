@@ -18,5 +18,7 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "registries": {}
+  "registries": {
+    "@jolyui": "https://www.jolyui.dev/r/{name}.json"
+  }
 }
