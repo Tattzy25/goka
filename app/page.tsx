@@ -1,18 +1,19 @@
 "use client"
 
 import { useState, useRef } from "react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Info, Loader2, Download, Upload, X, Sparkles, Share2, Edit } from "lucide-react"
+import { Info, Loader2, Download, Upload, X, Share2, Edit } from "lucide-react"
 import Lightbox from "yet-another-react-lightbox"
 import "yet-another-react-lightbox/styles.css"
 import { toast } from "sonner"
 import { generateImage } from "./actions"
+import { InkMeUpButton } from "@/components/ink-me-up-button/InkMeUpButton"
 import {
   Dialog,
   DialogContent,
@@ -131,7 +132,16 @@ function MultiImageUploadInput({
 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {values.map((src, idx) => (
             <div key={idx} className="relative overflow-hidden rounded-lg border bg-muted/30">
-              <img src={src} alt={`Upload preview ${idx + 1}`} className="h-24 w-full object-cover rounded-lg" />
+              <div className="relative h-24 w-full">
+                <Image
+                  src={src}
+                  alt={`Upload preview ${idx + 1}`}
+                  fill
+                  sizes="(max-width: 640px) 50vw, 25vw"
+                  className="object-cover rounded-lg"
+                  unoptimized
+                />
+              </div>
               <Button
                 type="button"
                 variant="secondary"
@@ -370,8 +380,7 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-        <Card className="h-full border-2">
-          <CardContent className="space-y-4 pt-6">
+          <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <LabelWithTooltip
@@ -402,34 +411,10 @@ export default function Home() {
                 }}
               />
             </div>
-          </CardContent>
-        </Card>
+          </div>
       </div>
 
-      <div className="flex justify-center">
-        <Button 
-          size="lg" 
-          className={cn(
-            "w-full max-w-md text-3xl py-8 h-auto transition-transform active:scale-95",
-            isLoading && "opacity-50 cursor-not-allowed active:scale-100"
-          )}
-          onClick={handleGenerate}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-3 h-8 w-8 animate-spin" />
-              CREATING...
-            </>
-          ) : (
-            <>
-              <Sparkles className="mr-3 h-8 w-8" />
-              CREATE
-              <Sparkles className="ml-3 h-8 w-8" />
-            </>
-          )}
-        </Button>
-      </div>
+      <InkMeUpButton onClick={handleGenerate} isLoading={isLoading} />
 
       <Separator />
       
@@ -450,10 +435,13 @@ export default function Home() {
                     setLightboxOpen(true)
                   }}
                 >
-                  <img 
-                    src={src} 
-                    alt={`Generated image ${i + 1}`} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  <Image
+                    src={src}
+                    alt={`Generated image ${i + 1}`}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    unoptimized
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
                 </div>
